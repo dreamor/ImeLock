@@ -106,7 +106,7 @@ ImeLock/
 
 | 特性 | SwitchKey | ImeLock |
 |------|-----------|---------|
-| 最低 macOS 版本 | 10.11 | 13.0 |
+| 最低 macOS 版本 | 10.11 | 11.0 |
 | 处理器支持 | Intel | Intel + Apple Silicon |
 | 登录项 API | LSSharedFileList (已废弃) | SMAppService (现代 API) |
 | 代码语言 | Swift + Objective-C | 纯 Swift |
