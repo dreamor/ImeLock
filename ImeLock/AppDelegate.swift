@@ -48,12 +48,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 设置菜单栏状态图标
     ///
     /// 配置:
-    /// - 固定图标宽度 (36pt)，确保弹出窗口位置稳定
+    /// - 使用系统标准宽度，与其他应用图标保持一致
     /// - 绑定点击事件 (支持左键和右键)
     /// - 监听锁定状态变化以更新图标
     func setupStatusBar() {
-        // 固定状态栏宽度，确保 popup 位置稳定
-        statusItem = NSStatusBar.system.statusItem(withLength: 36)
+        // 使用系统标准宽度，避免自定义宽度导致的间距不一致
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
             updateStatusBarIcon()
@@ -80,7 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let symbolName = inputManager.isLocked ? "lock.fill" : "lock.open"
             let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "ImeLock")!
             image.isTemplate = true
-            // 固定图标大小，确保切换时位置一致
+            // 使用系统标准图标尺寸 (macOS 菜单栏图标标准为 18x18 pt)
             image.size = NSSize(width: 18, height: 18)
             button.image = image
             button.imagePosition = .imageOnly
