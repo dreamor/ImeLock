@@ -19,11 +19,29 @@ class InputMethodManager: ObservableObject {
     /// 单例共享实例
     static let shared = InputMethodManager()
 
+    // MARK: - UserDefaults 键
+    private enum StorageKey {
+        static let isLocked = "isLocked"
+        static let lockedInputSourceID = "lockedInputSourceID"
+    }
+
     /// 输入法是否处于锁定状态
-    @Published var isLocked = false
+    @Published var isLocked = false {
+        didSet {
+            UserDefaults.standard.set(isLocked, forKey: StorageKey.isLocked)
+        }
+    }
 
     /// 被锁定的输入法对象
-    @Published var lockedInputSource: TISInputSource?
+    @Published var lockedInputSource: TISInputSource? {
+        didSet {
+            if let id = lockedInputSource.map({ getInputSourceID($0) }) {
+                UserDefaults.standard.set(id, forKey: StorageKey.lockedInputSourceID)
+            } else {
+                UserDefaults.standard.removeObject(forKey: StorageKey.lockedInputSourceID)
+            }
+        }
+    }
 
     /// 当前输入法的名称
     @Published var currentInputSourceName: String = ""
@@ -38,10 +56,42 @@ class InputMethodManager: ObservableObject {
     /// - 加载可用输入法列表
     /// - 更新当前输入法名称
     /// - 设置输入法变化监听
+    /// - 恢复之前保存的锁定状态
     init() {
         loadAvailableInputSources()
         updateCurrentInputSourceName()
         setupInputSourceChangeObserver()
+        restoreLockState()
+    }
+
+    // MARK: - 持久化存储
+
+    /// 恢复之前保存的锁定状态
+    ///
+    /// 从 UserDefaults 中读取:
+    /// - 锁定状态 (isLocked)
+    /// - 锁定的输入法 ID (lockedInputSourceID)
+    ///
+    /// 如果之前处于锁定状态，会切换到锁定的输入法并启用锁定
+    private func restoreLockState() {
+        let wasLocked = UserDefaults.standard.bool(forKey: StorageKey.isLocked)
+        guard wasLocked,
+              let savedID = UserDefaults.standard.string(forKey: StorageKey.lockedInputSourceID),
+              !savedID.isEmpty else {
+            return
+        }
+
+        // 在可用输入法列表中查找之前锁定的输入法
+        for source in availableInputSources {
+            if getInputSourceID(source) == savedID {
+                // 切换到之前锁定的输入法
+                selectInputSource(source)
+                // 设置锁定状态
+                lockedInputSource = source
+                isLocked = true
+                break
+            }
+        }
     }
 
     deinit {
@@ -149,6 +199,7 @@ class InputMethodManager: ObservableObject {
     func unlock() {
         isLocked = false
         lockedInputSource = nil
+        // UserDefaults 会在 property didSet 中自动清除
     }
 
     /// 切换锁定状态
