@@ -8,6 +8,7 @@
 import SwiftUI
 import ServiceManagement
 import Combine
+import os
 
 /// 应用程序委托类
 ///
@@ -16,6 +17,7 @@ import Combine
 /// - 管理弹出窗口 (Popover)
 /// - 处理用户交互 (左键点击、右键点击)
 /// - 监听输入法锁定状态变化
+@MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     /// 菜单栏状态图标
     var statusItem: NSStatusItem!
@@ -28,6 +30,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Combine 取消令牌集合，用于管理生命周期
     private var cancellables = Set<AnyCancellable>()
+
+    /// 输入法名称取消令牌
+    private var nameCancellable: AnyCancellable?
+
+    // MARK: - 日志系统
+
+    private static let logger = Logger(subsystem: "com.imelock.app", category: "AppDelegate")
 
     /// 应用程序启动完成后的初始化
     ///
@@ -48,14 +57,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 设置菜单栏状态图标
     ///
     /// 配置:
-    /// - 使用系统标准宽度，与其他应用图标保持一致
+    /// - 使用固定宽度，确保图标切换时位置不变
     /// - 绑定点击事件 (支持左键和右键)
     /// - 监听锁定状态变化以更新图标
     func setupStatusBar() {
-        // 使用系统标准宽度，避免自定义宽度导致的间距不一致
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        // 使用固定宽度，避免图标切换时按钮宽度变化导致 popover 位置偏移
+        // macOS 菜单栏图标标准尺寸为 18x18，加上左右 padding 共约 28pt
+        statusItem = NSStatusBar.system.statusItem(withLength: 28)
 
         if let button = statusItem.button {
+            // 配置按钮确保图标居中且尺寸稳定
+            button.imagePosition = .imageOnly
+            button.imageScaling = .scaleProportionallyDown
+            
             updateStatusBarIcon()
             button.action = #selector(togglePopover)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -65,9 +79,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         inputManager.$isLocked
             .receive(on: RunLoop.main)
             .sink { [weak self] (_: Bool) in
-                self?.updateStatusBarIcon()
+                Task { @MainActor in
+                    self?.updateStatusBarIcon()
+                }
             }
             .store(in: &cancellables)
+
+        // 监听输入法名称变化，更新可访问性描述
+        nameCancellable = inputManager.$currentInputSourceName
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.updateAccessibilityDescription()
+                }
+            }
     }
 
     /// 更新状态栏图标
@@ -76,15 +101,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// - 已锁定：lock.fill (实心锁)
     /// - 未锁定：lock.open (打开的锁)
     func updateStatusBarIcon() {
-        if let button = statusItem.button {
-            let symbolName = inputManager.isLocked ? "lock.fill" : "lock.open"
-            let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "ImeLock")!
-            image.isTemplate = true
-            // 使用系统标准图标尺寸 (macOS 菜单栏图标标准为 18x18 pt)
-            image.size = NSSize(width: 18, height: 18)
-            button.image = image
-            button.imagePosition = .imageOnly
-        }
+        guard let button = statusItem.button else { return }
+        
+        let symbolName = inputManager.isLocked ? "lock.fill" : "lock.open"
+        
+        // 创建配置确保图标对齐一致
+        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)!
+        image.isTemplate = true
+        image.size = NSSize(width: 18, height: 18)
+        
+        // 使用 withSymbolConfiguration 确保图标对齐
+        let configuredImage = image.withSymbolConfiguration(config) ?? image
+        button.image = configuredImage
+    }
+
+    /// 更新可访问性描述
+    ///
+    /// 为状态栏图标添加详细的可访问性标签和提示
+    private func updateAccessibilityDescription() {
+        guard let button = statusItem.button else { return }
+
+        let statusText = inputManager.isLocked ? "已锁定" : "未锁定"
+        let inputMethodName = inputManager.currentInputSourceName
+
+        // 使用 NSAccessibility 协议方法设置可访问性属性
+        button.setAccessibilityLabel("ImeLock - \(statusText)")
+        button.setAccessibilityHelp("当前输入法: \(inputMethodName)。点击显示选项，右键显示菜单。")
     }
 
     // MARK: - 弹出窗口设置
@@ -97,7 +140,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// - 内容：ContentView SwiftUI 视图
     func setupPopover() {
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 280, height: 360)
+        popover.contentSize = NSSize(width: 280, height: 380)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: ContentView())
     }

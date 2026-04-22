@@ -8,18 +8,34 @@
 import Foundation
 import Carbon
 import Combine
+import os
 
-/// 输入法管理器 - 单例类，负责管理系统输入法的切换和锁定
+/// 输入法管理器 - 负责管理系统输入法的切换和锁定
 ///
 /// 主要功能:
 /// - 获取和切换系统输入法
 /// - 锁定当前输入法，防止意外切换
 /// - 监听输入法变化并自动恢复锁定的输入法
-class InputMethodManager: ObservableObject {
+@MainActor
+final class InputMethodManager: ObservableObject {
     /// 单例共享实例
     static let shared = InputMethodManager()
 
+    // MARK: - 日志系统
+
+    private static let logger = Logger(subsystem: "com.imelock.app", category: "InputMethodManager")
+
+    // MARK: - Design Tokens
+
+    private enum Design {
+        /// 自动恢复锁定输入法的延迟时间（秒）
+        static let restoreDelay: TimeInterval = 0.05
+        /// 最大重试次数
+        static let maxRestoreRetries: Int = 3
+    }
+
     // MARK: - UserDefaults 键
+
     private enum StorageKey {
         static let isLocked = "isLocked"
         static let lockedInputSourceID = "lockedInputSourceID"
@@ -49,18 +65,21 @@ class InputMethodManager: ObservableObject {
     /// 系统中所有可用的输入法列表
     @Published var availableInputSources: [TISInputSource] = []
 
-    /// 监听输入法变化的观察者
-    private var observer: AnyObject?
+    /// 监听输入法选择的观察者
+    private var selectionObserver: AnyObject?
+    /// 监听输入法列表变化的观察者
+    private var listChangeObserver: AnyObject?
 
     /// 初始化方法
     /// - 加载可用输入法列表
     /// - 更新当前输入法名称
     /// - 设置输入法变化监听
     /// - 恢复之前保存的锁定状态
-    init() {
+    private init() {
         loadAvailableInputSources()
         updateCurrentInputSourceName()
         setupInputSourceChangeObserver()
+        setupInputSourceListChangeObserver()
         restoreLockState()
     }
 
@@ -89,14 +108,18 @@ class InputMethodManager: ObservableObject {
                 // 设置锁定状态
                 lockedInputSource = source
                 isLocked = true
+                Self.logger.info("已恢复锁定状态: \(self.getInputSourceName(source))")
                 break
             }
         }
     }
 
     deinit {
-        if let observer = observer {
-            DistributedNotificationCenter.default().removeObserver(observer)
+        if let selectionObserver = selectionObserver {
+            DistributedNotificationCenter.default().removeObserver(selectionObserver)
+        }
+        if let listChangeObserver = listChangeObserver {
+            DistributedNotificationCenter.default().removeObserver(listChangeObserver)
         }
     }
 
@@ -116,6 +139,7 @@ class InputMethodManager: ObservableObject {
         let conditions = conditionsDict as CFDictionary
 
         guard let sources = TISCreateInputSourceList(conditions, false)?.takeRetainedValue() as? [TISInputSource] else {
+            Self.logger.warning("无法获取输入法列表")
             return
         }
 
@@ -126,12 +150,13 @@ class InputMethodManager: ObservableObject {
             }
             return false
         }
+        Self.logger.debug("已加载 \(self.availableInputSources.count) 个输入法")
     }
 
     /// 获取输入法的本地化名称
     /// - Parameter source: TISInputSource 对象
     /// - Returns: 输入法名称，如果获取失败则返回 "Unknown"
-    func getInputSourceName(_ source: TISInputSource) -> String {
+    nonisolated func getInputSourceName(_ source: TISInputSource) -> String {
         if let namePtr = TISGetInputSourceProperty(source, kTISPropertyLocalizedName) {
             return Unmanaged<CFString>.fromOpaque(namePtr).takeUnretainedValue() as String
         }
@@ -141,7 +166,7 @@ class InputMethodManager: ObservableObject {
     /// 获取输入法的唯一标识符
     /// - Parameter source: TISInputSource 对象
     /// - Returns: 输入法 ID 字符串
-    func getInputSourceID(_ source: TISInputSource) -> String {
+    nonisolated func getInputSourceID(_ source: TISInputSource) -> String {
         if let idPtr = TISGetInputSourceProperty(source, kTISPropertyInputSourceID) {
             return Unmanaged<CFString>.fromOpaque(idPtr).takeUnretainedValue() as String
         }
@@ -150,7 +175,7 @@ class InputMethodManager: ObservableObject {
 
     /// 获取当前正在使用的输入法
     /// - Returns: 当前键盘输入源，获取失败时返回 nil
-    func getCurrentInputSource() -> TISInputSource? {
+    nonisolated func getCurrentInputSource() -> TISInputSource? {
         return TISCopyCurrentKeyboardInputSource()?.takeRetainedValue()
     }
 
@@ -165,9 +190,18 @@ class InputMethodManager: ObservableObject {
 
     /// 切换到指定的输入法
     /// - Parameter source: 要切换到的输入法对象
-    func selectInputSource(_ source: TISInputSource) {
-        TISSelectInputSource(source)
-        updateCurrentInputSourceName()
+    /// - Returns: 是否切换成功
+    @discardableResult
+    func selectInputSource(_ source: TISInputSource) -> Bool {
+        let result = TISSelectInputSource(source)
+        if result == noErr {
+            updateCurrentInputSourceName()
+            Self.logger.debug("已切换输入法: \(self.getInputSourceName(source))")
+            return true
+        } else {
+            Self.logger.error("切换输入法失败，错误码: \(result)")
+            return false
+        }
     }
 
     // MARK: - 锁定功能
@@ -180,6 +214,9 @@ class InputMethodManager: ObservableObject {
         lockedInputSource = getCurrentInputSource()
         isLocked = true
         updateCurrentInputSourceName()
+        if let source = lockedInputSource {
+            Self.logger.info("已锁定输入法: \(self.getInputSourceName(source))")
+        }
     }
 
     /// 锁定指定的输入法
@@ -191,6 +228,7 @@ class InputMethodManager: ObservableObject {
         lockedInputSource = source
         isLocked = true
         updateCurrentInputSourceName()
+        Self.logger.info("已锁定输入法: \(self.getInputSourceName(source))")
     }
 
     /// 解锁输入法
@@ -200,6 +238,7 @@ class InputMethodManager: ObservableObject {
         isLocked = false
         lockedInputSource = nil
         // UserDefaults 会在 property didSet 中自动清除
+        Self.logger.info("已解锁输入法")
     }
 
     /// 切换锁定状态
@@ -215,21 +254,39 @@ class InputMethodManager: ObservableObject {
 
     // MARK: - 输入法变化监听
 
-    /// 设置输入法变化事件监听器
+    /// 设置输入法选择变化事件监听器
     ///
     /// 监听 kTISNotifySelectedKeyboardInputSourceChanged 通知，
     /// 当用户切换输入法时触发 handleInputSourceChange 方法
     private func setupInputSourceChangeObserver() {
-        observer = DistributedNotificationCenter.default().addObserver(
+        selectionObserver = DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String),
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleInputSourceChange()
+            Task { @MainActor in
+                self?.handleInputSourceChange()
+            }
         } as AnyObject
     }
 
-    /// 处理输入法变化事件
+    /// 设置输入法列表变化事件监听器
+    ///
+    /// 监听 kTISNotifyEnabledKeyboardInputSourcesChanged 通知，
+    /// 当用户添加或删除输入法时自动刷新列表
+    private func setupInputSourceListChangeObserver() {
+        listChangeObserver = DistributedNotificationCenter.default().addObserver(
+            forName: NSNotification.Name(kTISNotifyEnabledKeyboardInputSourcesChanged as String),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.handleInputSourceListChange()
+            }
+        } as AnyObject
+    }
+
+    /// 处理输入法选择变化事件
     ///
     /// 当检测到输入法变化时:
     /// 1. 更新当前输入法名称
@@ -245,9 +302,40 @@ class InputMethodManager: ObservableObject {
 
             // 如果当前输入法与锁定的输入法不一致，则恢复
             if currentID != lockedID {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-                    self?.selectInputSource(locked)
-                }
+                Self.logger.debug("检测到输入法切换，自动恢复锁定")
+                restoreWithRetry(locked, retries: Design.maxRestoreRetries)
+            }
+        }
+    }
+
+    /// 处理输入法列表变化事件
+    ///
+    /// 当用户添加或删除输入法时刷新可用输入法列表
+    private func handleInputSourceListChange() {
+        loadAvailableInputSources()
+        Self.logger.info("输入法列表已更新")
+    }
+
+    // MARK: - 恢复机制
+
+    /// 带重试的输入法恢复机制
+    /// - Parameters:
+    ///   - source: 要恢复到的输入法
+    ///   - retries: 剩余重试次数
+    private func restoreWithRetry(_ source: TISInputSource, retries: Int) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(Design.restoreDelay * 1_000_000_000))
+
+            // 检查是否仍然处于锁定状态
+            guard self.isLocked else { return }
+
+            if self.selectInputSource(source) {
+                Self.logger.info("已成功恢复锁定输入法")
+            } else if retries > 0 {
+                Self.logger.warning("恢复失败，剩余重试次数: \(retries)")
+                self.restoreWithRetry(source, retries: retries - 1)
+            } else {
+                Self.logger.error("恢复输入法失败，已达到最大重试次数")
             }
         }
     }

@@ -24,3 +24,6 @@ DerivedData/
 
 # Claude
 .claude/
+# Agent/IDE docs
+AGENTS.md
+CLAUDE.md
