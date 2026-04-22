@@ -37,7 +37,7 @@ struct DesignConstantsTests {
     @Test("UI 尺寸应该在合理范围内")
     func uiDimensionsAreReasonable() {
         let popoverWidth: CGFloat = 280
-        let popoverHeight: CGFloat = 360
+        let popoverHeight: CGFloat = 380
         let borderRadius: CGFloat = 12
         let iconSize: CGFloat = 18
 
@@ -158,7 +158,7 @@ struct PopoverTests {
     @Test("Popover 尺寸应该合理")
     func popoverSizeIsReasonable() {
         let width: CGFloat = 280
-        let height: CGFloat = 360
+        let height: CGFloat = 380
 
         #expect(width > 100 && width < 1000)
         #expect(height > 100 && height < 1000)
