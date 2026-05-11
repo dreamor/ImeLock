@@ -107,7 +107,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 创建配置确保图标对齐一致
         let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)!
+        guard let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) else { return }
         image.isTemplate = true
         image.size = NSSize(width: 18, height: 18)
         

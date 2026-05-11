@@ -10,6 +10,24 @@ import Carbon
 import Combine
 import os
 
+/// 输入法管理协议 - 定义输入法管理的核心接口
+@MainActor
+protocol InputMethodManaging: ObservableObject {
+    var isLocked: Bool { get set }
+    var lockedInputSource: TISInputSource? { get set }
+    var currentInputSourceName: String { get }
+    var availableInputSources: [TISInputSource] { get set }
+
+    func getInputSourceName(_ source: TISInputSource) -> String
+    func getInputSourceID(_ source: TISInputSource) -> String
+    func getCurrentInputSource() -> TISInputSource?
+    func selectInputSource(_ source: TISInputSource) -> Bool
+    func lockCurrentInputSource()
+    func lockInputSource(_ source: TISInputSource)
+    func unlock()
+    func toggle()
+}
+
 /// 输入法管理器 - 负责管理系统输入法的切换和锁定
 ///
 /// 主要功能:
@@ -17,7 +35,7 @@ import os
 /// - 锁定当前输入法，防止意外切换
 /// - 监听输入法变化并自动恢复锁定的输入法
 @MainActor
-final class InputMethodManager: ObservableObject {
+final class InputMethodManager: ObservableObject, InputMethodManaging {
     /// 单例共享实例
     static let shared = InputMethodManager()
 
@@ -350,5 +368,15 @@ final class InputMethodManager: ObservableObject {
 
             Self.logger.error("恢复输入法失败，已达到最大重试次数")
         }
+    }
+}
+
+// MARK: - TISInputSource Stable Identity
+
+extension TISInputSource {
+    /// Stable identifier based on input source ID, survives list refreshes
+    var stableID: String {
+        guard let ptr = TISGetInputSourceProperty(self, kTISPropertyInputSourceID) else { return "" }
+        return unsafeBitCast(ptr, to: CFString.self) as String
     }
 }

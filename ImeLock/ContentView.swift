@@ -181,7 +181,7 @@ struct ContentView: View {
     var inputSourceList: some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(spacing: Design.itemSpacing) {
-                ForEach(inputManager.availableInputSources, id: \.self) { source in
+                ForEach(inputManager.availableInputSources, id: \.stableID) { source in
                     InputSourceRow(
                         source: source,
                         inputManager: inputManager,
