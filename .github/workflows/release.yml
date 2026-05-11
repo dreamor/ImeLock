@@ -1,0 +1,74 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project ImeLock.xcodeproj \
+            -scheme ImeLock \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS="arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
+            MACOSX_DEPLOYMENT_TARGET=14.0 \
+            build
+
+      - name: Package
+        run: |
+          APP_PATH="build/Build/Products/Release/ImeLock.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Error: ImeLock.app not found at $APP_PATH"
+            find build/Build/Products -name "*.app" 2>/dev/null
+            exit 1
+          fi
+
+          VERSION="${GITHUB_REF_NAME#v}"
+          cd build/Build/Products/Release
+          zip -r "${GITHUB_WORKSPACE}/ImeLock-${VERSION}.zip" ImeLock.app
+
+      - name: Generate SHA256
+        id: sha
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA256=$(shasum -a 256 "ImeLock-${VERSION}.zip" | awk '{print $1}')
+          echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ImeLock-${{ steps.sha.outputs.version }}.zip
+          body: |
+            ## ImeLock ${{ steps.sha.outputs.version }}
+
+            ### 安装方式
+
+            **Homebrew (推荐):**
+            ```bash
+            brew tap dreamor/tap
+            brew install --cask imelock
+            ```
+
+            **手动安装:**
+            下载 `ImeLock-${{ steps.sha.outputs.version }}.zip`，解压后将 `ImeLock.app` 拖入 `/Applications`。
+
+            > 首次打开时，右键点击应用选择"打开"以绕过 Gatekeeper 警告。
+
+            ---
+            SHA256: `${{ steps.sha.outputs.sha256 }}`

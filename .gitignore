@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+*.DS_Store
+._*
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.xcworkspace
+!default.xcworkspace
+
+# Build results
+build/
+DerivedData/
+*.build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# Claude
+.claude/
+# Agent/IDE docs
+AGENTS.md
+CLAUDE.md
