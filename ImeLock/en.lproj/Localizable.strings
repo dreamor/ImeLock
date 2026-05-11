@@ -1,0 +1,35 @@
+/* Status */
+"status.locked" = "Locked";
+"status.unlocked" = "Unlocked";
+
+/* Accessibility */
+"accessibility.status_help" = "Current input method: %@. Click to show options, right-click for menu.";
+"accessibility.locked_state" = "Locked State";
+"accessibility.unlocked_state" = "Unlocked State";
+"accessibility.unlock_button" = "Unlock Input Method";
+"accessibility.lock_button" = "Lock Current Input Method";
+"accessibility.input_source_list" = "Input Source List";
+
+/* Menu */
+"menu.unlock" = "Unlock Input Method";
+"menu.lock_current" = "Lock Current Input Method";
+"menu.quit" = "Quit";
+
+/* Header */
+"header.input_locked" = "Input Method Locked";
+"header.input_unlocked" = "Input Method Unlocked";
+
+/* Buttons */
+"button.unlock" = "Unlock";
+"button.lock" = "Lock";
+"button.quit" = "Quit";
+
+/* Footer */
+"footer.launch_at_login" = "Launch at Login";
+
+/* Errors */
+"error.launch_at_login_unsupported" = "Launch at Login requires macOS 13.0 or later";
+
+/* Alerts */
+"alert.settings_failed" = "Settings Failed";
+"alert.ok" = "OK";

@@ -126,11 +126,15 @@ struct ContentView: View {
                     .foregroundColor(.white)
             }
             .frame(width: Design.headerIconSize, height: Design.headerIconSize)
-            .accessibilityLabel(inputManager.isLocked ? "已锁定状态" : "未锁定状态")
+            .accessibilityLabel(inputManager.isLocked
+                    ? NSLocalizedString("accessibility.locked_state", comment: "Accessibility: locked")
+                    : NSLocalizedString("accessibility.unlocked_state", comment: "Accessibility: unlocked"))
 
             // 状态文字
             VStack(alignment: .leading, spacing: 3) {
-                Text(inputManager.isLocked ? "输入法已锁定" : "输入法未锁定")
+                Text(inputManager.isLocked
+                        ? NSLocalizedString("header.input_locked", comment: "Header: locked")
+                        : NSLocalizedString("header.input_unlocked", comment: "Header: unlocked"))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(Design.textPrimary)
 
@@ -149,7 +153,9 @@ struct ContentView: View {
                 HStack(spacing: 4) {
                     Image(systemName: inputManager.isLocked ? "lock.open" : "lock.fill")
                         .font(.system(size: 11, weight: .semibold))
-                    Text(inputManager.isLocked ? "解锁" : "锁定")
+                    Text(inputManager.isLocked
+                            ? NSLocalizedString("button.unlock", comment: "Button: unlock")
+                            : NSLocalizedString("button.lock", comment: "Button: lock"))
                         .font(.system(size: 12, weight: .semibold))
                 }
                 .foregroundColor(.white)
@@ -160,7 +166,9 @@ struct ContentView: View {
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(inputManager.isLocked ? "解锁输入法" : "锁定当前输入法")
+            .accessibilityLabel(inputManager.isLocked
+                ? NSLocalizedString("accessibility.unlock_button", comment: "Accessibility: unlock")
+                : NSLocalizedString("accessibility.lock_button", comment: "Accessibility: lock"))
         }
         .padding(.horizontal, Design.horizontalPadding)
         .padding(.vertical, 14)
@@ -195,7 +203,7 @@ struct ContentView: View {
         .frame(height: Design.inputListHeight)
         .padding(.horizontal, Design.horizontalPadding)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("输入法列表")
+        .accessibilityLabel(NSLocalizedString("accessibility.input_source_list", comment: "Accessibility: input source list"))
     }
 
     // MARK: - Footer View (底部设置栏)
@@ -220,7 +228,7 @@ struct ContentView: View {
                         }
                     }
                     
-                    Text("开机启动")
+                    Text(NSLocalizedString("footer.launch_at_login", comment: "Footer: launch at login"))
                         .font(.system(size: 12))
                         .foregroundColor(Design.textPrimary)
                 }
@@ -267,7 +275,7 @@ struct ContentView: View {
             }
         } else {
             Self.logger.warning("开机启动需要 macOS 13.0 或更高版本")
-            launchErrorMessage = "开机启动功能需要 macOS 13.0 或更高版本"
+            launchErrorMessage = NSLocalizedString("error.launch_at_login_unsupported", comment: "Error: launch at login unsupported")
             showLaunchError = true
             launchAtLogin = false
         }
@@ -286,7 +294,7 @@ struct ExitButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "power")
                     .font(.system(size: 11))
-                Text("退出")
+                Text(NSLocalizedString("button.quit", comment: "Button: quit"))
                     .font(.system(size: 12))
             }
             .foregroundColor(isHovering ? .red : Color(red: 0.6, green: 0.6, blue: 0.6))
@@ -394,9 +402,9 @@ struct ErrorAlertModifier: ViewModifier {
         content
             .alert(isPresented: $isPresented) {
                 Alert(
-                    title: Text("设置失败"),
+                    title: Text(NSLocalizedString("alert.settings_failed", comment: "Alert: settings failed")),
                     message: Text(message),
-                    dismissButton: .default(Text("确定"))
+                    dismissButton: .default(Text(NSLocalizedString("alert.ok", comment: "Alert: OK")))
                 )
             }
     }

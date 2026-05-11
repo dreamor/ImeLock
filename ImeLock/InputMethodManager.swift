@@ -41,6 +41,13 @@ final class InputMethodManager: ObservableObject {
         static let lockedInputSourceID = "lockedInputSourceID"
     }
 
+    // MARK: - TIS Property Helpers
+
+    nonisolated private func tisProperty<T>(_ source: TISInputSource, _ key: CFString) -> T? {
+        guard let ptr = TISGetInputSourceProperty(source, key) else { return nil }
+        return unsafeBitCast(ptr, to: T.self)
+    }
+
     /// 输入法是否处于锁定状态
     @Published var isLocked = false {
         didSet {
@@ -145,8 +152,8 @@ final class InputMethodManager: ObservableObject {
 
         // 过滤出已启用的输入法
         availableInputSources = sources.filter { source in
-            if let enabled = TISGetInputSourceProperty(source, kTISPropertyInputSourceIsEnabled) {
-                return Unmanaged<CFBoolean>.fromOpaque(enabled).takeUnretainedValue() == kCFBooleanTrue
+            if let enabled: CFBoolean = tisProperty(source, kTISPropertyInputSourceIsEnabled) {
+                return CFBooleanGetValue(enabled)
             }
             return false
         }
@@ -157,8 +164,8 @@ final class InputMethodManager: ObservableObject {
     /// - Parameter source: TISInputSource 对象
     /// - Returns: 输入法名称，如果获取失败则返回 "Unknown"
     nonisolated func getInputSourceName(_ source: TISInputSource) -> String {
-        if let namePtr = TISGetInputSourceProperty(source, kTISPropertyLocalizedName) {
-            return Unmanaged<CFString>.fromOpaque(namePtr).takeUnretainedValue() as String
+        if let name: CFString = tisProperty(source, kTISPropertyLocalizedName) {
+            return name as String
         }
         return "Unknown"
     }
@@ -167,8 +174,8 @@ final class InputMethodManager: ObservableObject {
     /// - Parameter source: TISInputSource 对象
     /// - Returns: 输入法 ID 字符串
     nonisolated func getInputSourceID(_ source: TISInputSource) -> String {
-        if let idPtr = TISGetInputSourceProperty(source, kTISPropertyInputSourceID) {
-            return Unmanaged<CFString>.fromOpaque(idPtr).takeUnretainedValue() as String
+        if let id: CFString = tisProperty(source, kTISPropertyInputSourceID) {
+            return id as String
         }
         return ""
     }
@@ -324,19 +331,24 @@ final class InputMethodManager: ObservableObject {
     ///   - retries: 剩余重试次数
     private func restoreWithRetry(_ source: TISInputSource, retries: Int) {
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(Design.restoreDelay * 1_000_000_000))
+            var remainingRetries = retries
 
-            // 检查是否仍然处于锁定状态
-            guard self.isLocked else { return }
+            while remainingRetries >= 0 {
+                try? await Task.sleep(nanoseconds: UInt64(Design.restoreDelay * 1_000_000_000))
+                guard self.isLocked else { return }
 
-            if self.selectInputSource(source) {
-                Self.logger.info("已成功恢复锁定输入法")
-            } else if retries > 0 {
-                Self.logger.warning("恢复失败，剩余重试次数: \(retries)")
-                self.restoreWithRetry(source, retries: retries - 1)
-            } else {
-                Self.logger.error("恢复输入法失败，已达到最大重试次数")
+                if self.selectInputSource(source) {
+                    Self.logger.info("已成功恢复锁定输入法")
+                    return
+                }
+
+                if remainingRetries > 0 {
+                    Self.logger.warning("恢复失败，剩余重试次数: \(remainingRetries)")
+                }
+                remainingRetries -= 1
             }
+
+            Self.logger.error("恢复输入法失败，已达到最大重试次数")
         }
     }
 }

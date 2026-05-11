@@ -122,12 +122,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateAccessibilityDescription() {
         guard let button = statusItem.button else { return }
 
-        let statusText = inputManager.isLocked ? "已锁定" : "未锁定"
+        let statusText = inputManager.isLocked
+            ? NSLocalizedString("status.locked", comment: "Lock status")
+            : NSLocalizedString("status.unlocked", comment: "Unlock status")
         let inputMethodName = inputManager.currentInputSourceName
 
-        // 使用 NSAccessibility 协议方法设置可访问性属性
         button.setAccessibilityLabel("ImeLock - \(statusText)")
-        button.setAccessibilityHelp("当前输入法: \(inputMethodName)。点击显示选项，右键显示菜单。")
+        let helpFormat = NSLocalizedString("accessibility.status_help", comment: "Accessibility help for status bar icon")
+        button.setAccessibilityHelp(String(format: helpFormat, inputMethodName))
     }
 
     // MARK: - 弹出窗口设置
@@ -180,7 +182,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
 
         // 根据当前状态动态显示菜单项
-        let lockTitle = inputManager.isLocked ? "解锁输入法" : "锁定当前输入法"
+        let lockTitle = inputManager.isLocked
+            ? NSLocalizedString("menu.unlock", comment: "Context menu: unlock")
+            : NSLocalizedString("menu.lock_current", comment: "Context menu: lock current")
         let lockItem = NSMenuItem(
             title: lockTitle,
             action: #selector(toggleLock),
@@ -191,7 +195,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        let quitItem = NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: NSLocalizedString("menu.quit", comment: "Context menu: quit"), action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 

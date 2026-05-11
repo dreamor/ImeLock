@@ -10,6 +10,7 @@
 		1A0000000000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000011 /* AppDelegate.swift */; };
 		1A0000000000000000000008 /* InputMethodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000018 /* InputMethodManager.swift */; };
 		1A0000000000000000000009 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0000000000000000000019 /* ContentView.swift */; };
+		BB0000000000000000000004 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000003 /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,6 +31,8 @@
 		1A000000000000000000001A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1A000000000000000000001B /* ImeLock.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ImeLock.entitlements; sourceTree = "<group>"; };
 		905474022F9887B9004F45B0 /* ImeLockTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ImeLockTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000000000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		BB0000000000000000000002 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -54,6 +57,18 @@
 		};
 /* End PBXFrameworksBuildPhase section */
 
+/* Begin PBXVariantGroup section */
+		BB0000000000000000000003 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BB0000000000000000000001 /* en */,
+				BB0000000000000000000002 /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin PBXGroup section */
 		1A0000000000000000000040 = {
 			isa = PBXGroup;
@@ -74,6 +89,7 @@
 				1A000000000000000000001A /* Info.plist */,
 				909AC4A32F6A7FBD009780F6 /* AppIcons */,
 				1A000000000000000000001B /* ImeLock.entitlements */,
+				BB0000000000000000000003 /* Localizable.strings */,
 			);
 			path = ImeLock;
 			sourceTree = "<group>";
@@ -164,6 +180,7 @@
 			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				en,
 				Base,
 				"zh-Hans",
 			);
@@ -183,6 +200,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB0000000000000000000004 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

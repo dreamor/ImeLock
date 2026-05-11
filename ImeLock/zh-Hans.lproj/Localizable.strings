@@ -1,0 +1,35 @@
+/* Status */
+"status.locked" = "已锁定";
+"status.unlocked" = "未锁定";
+
+/* Accessibility */
+"accessibility.status_help" = "当前输入法: %@。点击显示选项，右键显示菜单。";
+"accessibility.locked_state" = "已锁定状态";
+"accessibility.unlocked_state" = "未锁定状态";
+"accessibility.unlock_button" = "解锁输入法";
+"accessibility.lock_button" = "锁定当前输入法";
+"accessibility.input_source_list" = "输入法列表";
+
+/* Menu */
+"menu.unlock" = "解锁输入法";
+"menu.lock_current" = "锁定当前输入法";
+"menu.quit" = "退出";
+
+/* Header */
+"header.input_locked" = "输入法已锁定";
+"header.input_unlocked" = "输入法未锁定";
+
+/* Buttons */
+"button.unlock" = "解锁";
+"button.lock" = "锁定";
+"button.quit" = "退出";
+
+/* Footer */
+"footer.launch_at_login" = "开机启动";
+
+/* Errors */
+"error.launch_at_login_unsupported" = "开机启动功能需要 macOS 13.0 或更高版本";
+
+/* Alerts */
+"alert.settings_failed" = "设置失败";
+"alert.ok" = "确定";
