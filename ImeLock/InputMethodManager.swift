@@ -133,7 +133,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
                 // 设置锁定状态
                 lockedInputSource = source
                 isLocked = true
-                Self.logger.info("已恢复锁定状态: \(self.getInputSourceName(source))")
+                Self.logger.info("Restored lock state: \(self.getInputSourceName(source))")
                 break
             }
         }
@@ -164,7 +164,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
         let conditions = conditionsDict as CFDictionary
 
         guard let sources = TISCreateInputSourceList(conditions, false)?.takeRetainedValue() as? [TISInputSource] else {
-            Self.logger.warning("无法获取输入法列表")
+            Self.logger.warning("Failed to get input source list")
             return
         }
 
@@ -175,7 +175,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
             }
             return false
         }
-        Self.logger.debug("已加载 \(self.availableInputSources.count) 个输入法")
+        Self.logger.debug("Loaded \(self.availableInputSources.count) input sources")
     }
 
     /// 获取输入法的本地化名称
@@ -221,10 +221,10 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
         let result = TISSelectInputSource(source)
         if result == noErr {
             updateCurrentInputSourceName()
-            Self.logger.debug("已切换输入法: \(self.getInputSourceName(source))")
+            Self.logger.debug("Switched input source: \(self.getInputSourceName(source))")
             return true
         } else {
-            Self.logger.error("切换输入法失败，错误码: \(result)")
+            Self.logger.error("Failed to switch input source, error: \(result)")
             return false
         }
     }
@@ -240,7 +240,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
         isLocked = true
         updateCurrentInputSourceName()
         if let source = lockedInputSource {
-            Self.logger.info("已锁定输入法: \(self.getInputSourceName(source))")
+            Self.logger.info("Locked input source: \(self.getInputSourceName(source))")
         }
     }
 
@@ -253,7 +253,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
         lockedInputSource = source
         isLocked = true
         updateCurrentInputSourceName()
-        Self.logger.info("已锁定输入法: \(self.getInputSourceName(source))")
+        Self.logger.info("Locked input source: \(self.getInputSourceName(source))")
     }
 
     /// 解锁输入法
@@ -263,7 +263,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
         isLocked = false
         lockedInputSource = nil
         // UserDefaults 会在 property didSet 中自动清除
-        Self.logger.info("已解锁输入法")
+        Self.logger.info("Unlocked input source")
     }
 
     /// 切换锁定状态
@@ -327,7 +327,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
 
             // 如果当前输入法与锁定的输入法不一致，则恢复
             if currentID != lockedID {
-                Self.logger.debug("检测到输入法切换，自动恢复锁定")
+                Self.logger.debug("Input source changed, restoring lock")
                 restoreWithRetry(locked, retries: Design.maxRestoreRetries)
             }
         }
@@ -338,7 +338,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
     /// 当用户添加或删除输入法时刷新可用输入法列表
     private func handleInputSourceListChange() {
         loadAvailableInputSources()
-        Self.logger.info("输入法列表已更新")
+        Self.logger.info("Input source list updated")
     }
 
     // MARK: - 恢复机制
@@ -356,17 +356,17 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
                 guard self.isLocked else { return }
 
                 if self.selectInputSource(source) {
-                    Self.logger.info("已成功恢复锁定输入法")
+                    Self.logger.info("Successfully restored locked input source")
                     return
                 }
 
                 if remainingRetries > 0 {
-                    Self.logger.warning("恢复失败，剩余重试次数: \(remainingRetries)")
+                    Self.logger.warning("Restore failed, retries remaining: \(remainingRetries)")
                 }
                 remainingRetries -= 1
             }
 
-            Self.logger.error("恢复输入法失败，已达到最大重试次数")
+            Self.logger.error("Failed to restore input source, max retries reached")
         }
     }
 }

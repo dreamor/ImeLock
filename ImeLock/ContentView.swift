@@ -262,19 +262,19 @@ struct ContentView: View {
             do {
                 if enabled {
                     try SMAppService.mainApp.register()
-                    Self.logger.info("已启用开机启动")
+                    Self.logger.info("Launch at login enabled")
                 } else {
                     try SMAppService.mainApp.unregister()
-                    Self.logger.info("已禁用开机启动")
+                    Self.logger.info("Launch at login disabled")
                 }
             } catch {
-                Self.logger.error("开机启动设置失败: \(error.localizedDescription)")
+                Self.logger.error("Launch at login setup failed: \(error.localizedDescription)")
                 launchErrorMessage = error.localizedDescription
                 showLaunchError = true
                 launchAtLogin = !enabled
             }
         } else {
-            Self.logger.warning("开机启动需要 macOS 13.0 或更高版本")
+            Self.logger.warning("Launch at login requires macOS 13.0 or later")
             launchErrorMessage = NSLocalizedString("error.launch_at_login_unsupported", comment: "Error: launch at login unsupported")
             showLaunchError = true
             launchAtLogin = false
@@ -306,6 +306,7 @@ struct ExitButton: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(NSLocalizedString("button.quit", comment: "Accessibility: quit app"))
         .onHover { hovering in
             isHovering = hovering
         }
