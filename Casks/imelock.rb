@@ -1,5 +1,5 @@
 cask "imelock" do
-  version "1.0.0"
+  version "1.0.1"
   # SHA256 is auto-updated in the homebrew-tap repo after each release -- do not edit manually
   sha256 "PLACEHOLDER_UPDATE_ON_RELEASE"
 
