@@ -177,6 +177,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ///
     /// 菜单选项:
     /// - 锁定/解锁输入法
+    /// - 关于 ImeLock
     /// - 退出应用
     func showContextMenu() {
         let menu = NSMenu()
@@ -195,6 +196,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        let aboutItem = NSMenuItem(
+            title: NSLocalizedString("menu.about", comment: "Context menu: about"),
+            action: #selector(showAbout),
+            keyEquivalent: ""
+        )
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let quitItem = NSMenuItem(title: NSLocalizedString("menu.quit", comment: "Context menu: quit"), action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -210,6 +221,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 切换输入法锁定状态
     @objc func toggleLock() {
         inputManager.toggle()
+    }
+
+    /// 显示关于窗口
+    private var aboutWindow: NSWindow?
+
+    @objc func showAbout() {
+        if let window = aboutWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 320),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = NSLocalizedString("menu.about", comment: "About window title")
+        window.contentView = NSHostingView(rootView: AboutView())
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        aboutWindow = window
     }
 
     /// 退出应用程序

@@ -13,6 +13,7 @@
 /* Menu */
 "menu.unlock" = "Unlock Input Method";
 "menu.lock_current" = "Lock Current Input Method";
+"menu.about" = "About ImeLock";
 "menu.quit" = "Quit";
 
 /* Header */
@@ -30,3 +31,8 @@
 /* Alerts */
 "alert.settings_failed" = "Settings Failed";
 "alert.ok" = "OK";
+
+/* About */
+"about.description" = "Lock your input method to prevent accidental switching across apps";
+"about.author" = "Author:";
+"about.acknowledgements" = "Inspired by:";
