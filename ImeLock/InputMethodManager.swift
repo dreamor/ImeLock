@@ -87,6 +87,9 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
     /// 当前输入法的名称
     @Published var currentInputSourceName: String = ""
 
+    /// 当前输入法的 ID（缓存，避免频繁调用 TIS API）
+    @Published var currentInputSourceID: String = ""
+
     /// 系统中所有可用的输入法列表
     @Published var availableInputSources: [TISInputSource] = []
 
@@ -204,10 +207,11 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
         return TISCopyCurrentKeyboardInputSource()?.takeRetainedValue()
     }
 
-    /// 更新当前输入法名称
+    /// 更新当前输入法名称和 ID 缓存
     func updateCurrentInputSourceName() {
         if let current = getCurrentInputSource() {
             currentInputSourceName = getInputSourceName(current)
+            currentInputSourceID = getInputSourceID(current)
         }
     }
 
@@ -346,12 +350,10 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
     /// 带重试的输入法恢复机制
     /// - Parameters:
     ///   - source: 要恢复到的输入法
-    ///   - retries: 剩余重试次数
+    ///   - retries: 最大重试次数
     private func restoreWithRetry(_ source: TISInputSource, retries: Int) {
         Task { @MainActor in
-            var remainingRetries = retries
-
-            while remainingRetries >= 0 {
+            for attempt in 1...retries {
                 try? await Task.sleep(nanoseconds: UInt64(Design.restoreDelay * 1_000_000_000))
                 guard self.isLocked else { return }
 
@@ -360,10 +362,7 @@ final class InputMethodManager: ObservableObject, InputMethodManaging {
                     return
                 }
 
-                if remainingRetries > 0 {
-                    Self.logger.warning("Restore failed, retries remaining: \(remainingRetries)")
-                }
-                remainingRetries -= 1
+                Self.logger.warning("Restore failed, attempt \(attempt)/\(retries)")
             }
 
             Self.logger.error("Failed to restore input source, max retries reached")

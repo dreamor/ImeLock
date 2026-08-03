@@ -102,6 +102,9 @@ struct ContentView: View {
             isPresented: $showLaunchError,
             message: launchErrorMessage
         ))
+        .onAppear {
+            syncLaunchAtLoginState()
+        }
     }
 
     // MARK: - Header View (顶部标题栏)
@@ -247,9 +250,15 @@ struct ContentView: View {
 
     // MARK: - 辅助函数
 
+    func syncLaunchAtLoginState() {
+        let actualEnabled = SMAppService.mainApp.status == .enabled
+        if launchAtLogin != actualEnabled {
+            launchAtLogin = actualEnabled
+        }
+    }
+
     func isCurrentSource(_ source: TISInputSource) -> Bool {
-        guard let current = inputManager.getCurrentInputSource() else { return false }
-        return inputManager.getInputSourceID(source) == inputManager.getInputSourceID(current)
+        return inputManager.getInputSourceID(source) == inputManager.currentInputSourceID
     }
 
     func isLockedSource(_ source: TISInputSource) -> Bool {
@@ -258,26 +267,19 @@ struct ContentView: View {
     }
 
     func setLaunchAtLogin(_ enabled: Bool) {
-        if #available(macOS 13.0, *) {
-            do {
-                if enabled {
-                    try SMAppService.mainApp.register()
-                    Self.logger.info("Launch at login enabled")
-                } else {
-                    try SMAppService.mainApp.unregister()
-                    Self.logger.info("Launch at login disabled")
-                }
-            } catch {
-                Self.logger.error("Launch at login setup failed: \(error.localizedDescription)")
-                launchErrorMessage = error.localizedDescription
-                showLaunchError = true
-                launchAtLogin = !enabled
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+                Self.logger.info("Launch at login enabled")
+            } else {
+                try SMAppService.mainApp.unregister()
+                Self.logger.info("Launch at login disabled")
             }
-        } else {
-            Self.logger.warning("Launch at login requires macOS 13.0 or later")
-            launchErrorMessage = NSLocalizedString("error.launch_at_login_unsupported", comment: "Error: launch at login unsupported")
+        } catch {
+            Self.logger.error("Launch at login setup failed: \(error.localizedDescription)")
+            launchErrorMessage = error.localizedDescription
             showLaunchError = true
-            launchAtLogin = false
+            launchAtLogin = !enabled
         }
     }
 }

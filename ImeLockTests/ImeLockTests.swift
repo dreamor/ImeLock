@@ -16,7 +16,6 @@ struct LocalizationTests {
         "header.input_locked", "header.input_unlocked",
         "button.unlock", "button.lock", "button.quit",
         "footer.launch_at_login",
-        "error.launch_at_login_unsupported",
         "alert.settings_failed", "alert.ok",
         "accessibility.status_help",
         "accessibility.locked_state", "accessibility.unlocked_state",

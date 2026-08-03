@@ -27,9 +27,6 @@
 /* Footer */
 "footer.launch_at_login" = "开机启动";
 
-/* Errors */
-"error.launch_at_login_unsupported" = "开机启动功能需要 macOS 13.0 或更高版本";
-
 /* Alerts */
 "alert.settings_failed" = "设置失败";
 "alert.ok" = "确定";

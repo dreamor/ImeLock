@@ -5,7 +5,7 @@ cask "imelock" do
 
   url "https://github.com/dreamor/ImeLock/releases/download/v#{version}/ImeLock-#{version}.zip"
   name "ImeLock"
-  desc "macOS input method locker - lock input method per app"
+  desc "macOS input method locker - prevent accidental switching across apps"
   homepage "https://github.com/dreamor/ImeLock"
 
   depends_on macos: ">= :sonoma"

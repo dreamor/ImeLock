@@ -27,9 +27,6 @@
 /* Footer */
 "footer.launch_at_login" = "Launch at Login";
 
-/* Errors */
-"error.launch_at_login_unsupported" = "Launch at Login requires macOS 13.0 or later";
-
 /* Alerts */
 "alert.settings_failed" = "Settings Failed";
 "alert.ok" = "OK";
