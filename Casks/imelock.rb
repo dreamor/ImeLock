@@ -1,7 +1,7 @@
 cask "imelock" do
   version "1.1.1"
   # SHA256 is auto-updated in the homebrew-tap repo after each release -- do not edit manually
-  sha256 "7324d527a9a11a77c7e6cfd9a1fc06c047ab98e5e649c7e6b78d573f3fa024d0"
+  sha256 "64de88a6ec206b786803616a44b155afa2f321c0c74f564b3d1759a428daf619"
 
   url "https://github.com/dreamor/ImeLock/releases/download/v#{version}/ImeLock-#{version}.zip"
   name "ImeLock"
